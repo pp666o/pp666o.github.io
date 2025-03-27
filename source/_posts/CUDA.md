@@ -193,7 +193,7 @@ unsigned int kn = gridDim.x * blockDim.x * blockDim.y * blockIdx.y
 3. 磁场Hy的更新
 - 循环范围是 `i=0` 到 `i=row-2`，`j=0` 到 `j=column-1`
 - 所有列的Hy都被更新，但最后一行的Hy不更新
-- 这是因为Hy在y方向上与Ez交错排列，最后一行的Hy不需要计算
+- 这是因为Hy在y方向上与Ez交错排列，最后一行的Hy不需要计算 
 
 
 
