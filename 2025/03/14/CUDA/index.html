@@ -19,19 +19,21 @@
   <meta name="author" content="pp">
   <meta name="keywords" content="">
   
-    <meta property="og:type" content="article">
-<meta property="og:title" content="pp&#39;s blog">
+    <meta name="description" content="FDTDcalculate on a GPUcode   main.cu kernel.u kenel.cuh    malloc memory、initialize variable、call the functions、free memory calculate ez in one GPU declare kernel function   12345678910111213141516171">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Heterogeneous Parallel Computing">
 <meta property="og:url" content="http://example.com/2025/03/14/CUDA/index.html">
 <meta property="og:site_name" content="pp&#39;s blog">
+<meta property="og:description" content="FDTDcalculate on a GPUcode   main.cu kernel.u kenel.cuh    malloc memory、initialize variable、call the functions、free memory calculate ez in one GPU declare kernel function   12345678910111213141516171">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-03-14T11:56:03.657Z">
-<meta property="article:modified_time" content="2025-03-14T11:56:03.657Z">
+<meta property="article:modified_time" content="2025-03-27T13:52:12.033Z">
 <meta property="article:author" content="pp">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>pp&#39;s blog</title>
+  <title>Heterogeneous Parallel Computing - pp&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -197,7 +199,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text=""></span>
+            <span id="subtitle" data-typed-text="Heterogeneous Parallel Computing"></span>
           
         </div>
 
@@ -220,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          0 字
+          1.6k 字
         
       </span>
     
@@ -231,7 +233,7 @@
         
         
         
-          1 分钟
+          14 分钟
         
       </span>
     
@@ -268,12 +270,210 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header"></h1>
+            <h1 id="seo-header">Heterogeneous Parallel Computing</h1>
             
             
               <div class="markdown-body">
                 
-                
+                <h1 id="FDTD"><a href="#FDTD" class="headerlink" title="FDTD"></a>FDTD</h1><h2 id="calculate-on-a-GPU"><a href="#calculate-on-a-GPU" class="headerlink" title="calculate on a GPU"></a>calculate on a GPU</h2><h3 id="code"><a href="#code" class="headerlink" title="code"></a>code</h3><table>
+<thead>
+<tr>
+<th>main.cu</th>
+<th>kernel.u</th>
+<th>kenel.cuh</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>malloc memory、initialize variable、call the functions、free memory</td>
+<td>calculate ez in one GPU</td>
+<td>declare kernel function</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs cuda">main.cu<br>    main(): <br>        define ntimestep = 200, row = 256 ,column =256<br>        caculate mem_size = sizeof(float) * row * coluumn <br>        malloc memory for variable *h_hx1d, *h_hy1d, *h_ez1d<br>        use for loop to malloc dynamic memory for variable *h_hx2d, *h_hy2d, *h_ez2d<br>        use **cudaMalloc** to malloc memory for d_hx, d_hy, d_ez which size = mem_size<br>        use a for loop to initialize h_hx1d, h_hy1d, h_ez1d<br>        use cudaMemcpy to copy the host memory to device<br>        difine grid(16, 16, 1) --&gt; gridDim.x = gridDim .y =16<br>        difine threads(16, 16, 1) --&gt; blockDim.x = blockDim .y =16<br>        call the iteration function<br>        use cudaMemcpy to copy the device memory to host<br>        use a for loop to assign the data from the 1D array ez1d to the 2D array ez2d  <br>        free host memory and device memory  <br>    cpuiteration():<br>        Define source position: isource = 16*8+8, jsource = 16*8+8<br>        Dynamically allocate memory for hx, hy, ez<br>        Use nested loops to set boundary conditions<br>        Calculate electromagnetic fields according to FDTD equations<br>        Output results to the cpuez.dat file <br></code></pre></td></tr></table></figure>
+<h4 id="CUDA-Kernel-iteration-Execution-Process-Analysis"><a href="#CUDA-Kernel-iteration-Execution-Process-Analysis" class="headerlink" title="CUDA Kernel iteration Execution Process Analysis"></a>CUDA Kernel <code>iteration</code> Execution Process Analysis</h4><h5 id="Initialization-and-Parameter-Setup"><a href="#Initialization-and-Parameter-Setup" class="headerlink" title="Initialization and Parameter Setup"></a>Initialization and Parameter Setup</h5><p>First, the kernel defines several physical constants and grid parameters:</p>
+<ul>
+<li>Physical constants: π, speed of light c, wavelength, etc.</li>
+<li>Spatial and temporal steps: dx and dt</li>
+<li>Angular frequency omega</li>
+</ul>
+<h5 id="Thread-Index-Calculation"><a href="#Thread-Index-Calculation" class="headerlink" title="Thread Index Calculation"></a>Thread Index Calculation</h5><p>Each thread calculates its position in the entire computational domain:</p>
+<ul>
+<li>Using blockIdx and threadIdx to determine the thread’s position in the 2D grid</li>
+<li>Computing a unique global index <code>kn</code> for accessing array elements in global memory</li>
+<li>Defining the source position <code>source</code></li>
+</ul>
+<h5 id="Computation-Execution"><a href="#Computation-Execution" class="headerlink" title="Computation Execution"></a>Computation Execution</h5><p>The kernel performs two different calculations based on the <code>type</code> parameter:</p>
+<h6 id="When-type-0-Update-Electric-Field-Ez"><a href="#When-type-0-Update-Electric-Field-Ez" class="headerlink" title="When type&#x3D;0 (Update Electric Field Ez):"></a>When type&#x3D;0 (Update Electric Field Ez):</h6><ol>
+<li><p><strong>Boundary Condition Handling</strong>:</p>
+<ul>
+<li>If the thread is located at the boundary of the computational domain, Ez is set to 0</li>
+</ul>
+</li>
+<li><p><strong>Source Processing</strong>:</p>
+<ul>
+<li>If the current position is the source position, Ez is set to a sine wave: <code>sin(omega*n*dt)</code></li>
+</ul>
+</li>
+<li><p><strong>FDTD Update</strong>:</p>
+<ul>
+<li>For other positions, Ez is updated according to the FDTD equation:</li>
+</ul>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">Ez<span class="hljs-selector-attr">[kn]</span> += <span class="hljs-number">0.5</span>*((Hy<span class="hljs-selector-attr">[kn]</span>-Hy<span class="hljs-selector-attr">[kn-1]</span>)<span class="hljs-built_in">-</span>(Hx<span class="hljs-selector-attr">[kn]</span>-Hx<span class="hljs-selector-attr">[kn-Dim]</span>))<br></code></pre></td></tr></table></figure>
+<ul>
+<li>This implements the update of the electric field Ez based on spatial derivatives of the magnetic fields Hx and Hy</li>
+</ul>
+</li>
+</ol>
+<h6 id="When-type-1-Update-Magnetic-Fields-Hx-and-Hy"><a href="#When-type-1-Update-Magnetic-Fields-Hx-and-Hy" class="headerlink" title="When type&#x3D;1 (Update Magnetic Fields Hx and Hy):"></a>When type&#x3D;1 (Update Magnetic Fields Hx and Hy):</h6><ol>
+<li><p><strong>Update Hx</strong>:</p>
+<ul>
+<li>If not at the upper boundary in the y direction, Hx is updated based on the spatial derivative of Ez:</li>
+</ul>
+<figure class="highlight inform7"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs inform7">Hx<span class="hljs-comment">[kn]</span> -= 0.5*(Ez<span class="hljs-comment">[kn+Dim]</span>-Ez<span class="hljs-comment">[kn]</span>)<br></code></pre></td></tr></table></figure>
+<ul>
+<li>Otherwise, Hx is set to 0 at the boundary</li>
+</ul>
+</li>
+<li><p><strong>Update Hy</strong>:</p>
+<ul>
+<li>If not at the right boundary in the x direction, Hy is updated based on the spatial derivative of Ez:</li>
+</ul>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Hy</span>[kn] += <span class="hljs-number">0</span>.<span class="hljs-number">5</span>*(Ez[kn+<span class="hljs-number">1</span>]-Ez[kn])<br></code></pre></td></tr></table></figure>
+<ul>
+<li>Otherwise, Hy is set to 0 at the boundary</li>
+</ul>
+</li>
+</ol>
+<h3 id="questions"><a href="#questions" class="headerlink" title="questions"></a>questions</h3><h2 id="questions-1"><a href="#questions-1" class="headerlink" title="questions"></a>questions</h2><ul>
+<li>可不可以写成<code>float* h_hx1d =malloc(mem_size)</code>;没有<code>float*</code>会怎么样</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-type">float</span>* h_hx1d =(<span class="hljs-type">float</span>*)<span class="hljs-built_in">malloc</span>(mem_size);<br></code></pre></td></tr></table></figure>
+<p>在C语言中，<code>malloc</code>函数用于动态分配内存，并返回一个指向分配内存的指针。它的返回值是<code>void*</code>类型，这意味着它是一个通用指针，必须显式地转换为适当的指针类型才能正确使用。</p>
+<ul>
+<li>为什么分配二维数组时，行可以像一维直接分配，列却需要使用循环</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs cuda"><br>float ** h_hx2d=(float **)malloc(row*sizeof(float*) );<br>float ** h_hy2d=(float **)malloc(row*sizeof(float*) );<br>float ** h_ez2d=(float **)malloc(row*sizeof(float*) );<br>for (i=0;i&lt;row;i++)&#123;<br>    h_hx2d[i]=(float*)malloc(column*sizeof(float));<br>    h_hy2d[i]=(float*)malloc(column*sizeof(float));<br>    h_ez2d[i]=(float*)malloc(column*sizeof(float));<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在C语言中，二维数组的内存分配与一维数组有些不同，因为C语言本身不直接支持动态的二维数组。为了实现动态的二维数组，通常需要分两步进行内存分配：首先为行指针数组分配内存，然后为每一行分配内存。</p>
+<ul>
+<li>grid, theards参数定义</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cuda">dim3 grid(16,16,1);<br>dim3 threads(16,16,1);<br></code></pre></td></tr></table></figure>
+<p>在CUDA编程中，<code>dim3</code>类型用于定义网格（grid）和线程块（block）的维度。CUDA通过将计算任务分配到多个线程中并行执行来加速计算，而这些线程被组织成线程块和网格。</p>
+<ul>
+<li>核函数调用</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs cuda"><br>for (i=0;i&lt;ntimestep;i++) &#123;<br>    iteration &lt;&lt;&lt; grid, threads &gt;&gt;&gt;(d_hx,d_hy,d_ez,i,0);<br>    iteration &lt;&lt;&lt; grid, threads &gt;&gt;&gt;(d_hx,d_hy,d_ez,i,1);<br>    cudaThreadSynchronize();<br>&#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>为什么要循环多次调用iteration</li>
+</ul>
+<ol>
+<li>时间步进：在电磁波传播模拟中，电场和磁场的状态需要在每个时间步上进行更新。每次迭代对应于模拟中的一个时间步。</li>
+<li>逐步更新场变量：电场（<code>g_ez</code>）和磁场（<code>g_hx</code>和<code>g_hy</code>）的值需要逐步更新，以模拟电磁波在空间中的传播。</li>
+</ol>
+<ul>
+<li>这个函数中，kn是一个已知的定值吗？<br><code>kn</code> 不是一个定值，而是一个动态计算的索引值，用于确定当前 CUDA 线程应该处理的数组元素位置。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cuda">unsigned int kn = gridDim.x * blockDim.x * blockDim.y * blockIdx.y   <br>    + gridDim.x * blockDim.x * threadIdx.y<br>    + blockDim.x * blockIdx.x<br>    + threadIdx.x;<br></code></pre></td></tr></table></figure>
+<p>这个计算公式将二维网格中的线程位置映射到一维数组索引。</p>
+<ol>
+<li><p>每个线程执行时，都会基于自己的位置信息计算出唯一的 <code>kn</code> 值：</p>
+<ul>
+<li><code>blockIdx.x</code>, <code>blockIdx.y</code>: 当前线程块在网格中的坐标</li>
+<li><code>threadIdx.x</code>, <code>threadIdx.y</code>: 当前线程在块内的坐标</li>
+<li><code>gridDim.x</code>: 网格在 x 方向的块数量</li>
+<li><code>blockDim.x</code>, <code>blockDim.y</code>: 每个块在 x 和 y 方向的线程数量</li>
+</ul>
+</li>
+<li><p>每个线程执行时会得到不同的 <code>kn</code> 值，对应于它负责处理的网格点</p>
+</li>
+<li><p>这种计算方式实际上是将二维网格的坐标 (x, y) 映射到一维数组的索引，使得每个线程可以访问自己负责的数组元素</p>
+</li>
+</ol>
+<p>因此，<code>kn</code> 是一个变量，其值取决于执行该代码的特定线程在 CUDA 网格中的位置。每个线程都会计算出自己独特的 <code>kn</code> 值，用于访问全局内存中的相应数据元素。</p>
+<ul>
+<li>比较两种索引方法</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cuda">unsigned int Dim=gridDim.x*blockDim.x;<br>unsigned int kn =gridDim.x * blockDim.x * blockDim.y * blockIdx.y   <br>    + gridDim.x*blockDim.x * threadIdx.y<br>    + blockDim.x * blockIdx.x<br>    + threadIdx.x;    <br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cuda">int col = blockIdx.x*blockDim.x + threadIdx.x;<br>int row = blockIdx.y*blockDim.y + threadIdx.y;<br>int index = row*width + col;<br></code></pre></td></tr></table></figure>
+<ol>
+<li><p>表达方式不同</p>
+<ul>
+<li>第一种方法直接用一个公式计算</li>
+<li>第二种方法分步计算，先计算全局的行列索引，再转换为一维索引</li>
+</ul>
+</li>
+<li><p>width 参数的含义</p>
+<ul>
+<li>在第二种方法中，<code>width</code> 表示二维网格在 x 方向（列方向）的总宽度</li>
+<li>在第一种方法中，这个值隐含为 <code>gridDim.x * blockDim.x</code></li>
+</ul>
+</li>
+<li><p>假设条件</p>
+<ul>
+<li>第一种方法假设网格在 x 方向的总宽度就是 <code>gridDim.x * blockDim.x</code></li>
+<li>第二种方法中的 <code>width</code> 可能是任意值（通常是数据的实际宽度）</li>
+</ul>
+</li>
+<li><p>等价性证明<br>如果 <code>width = gridDim.x * blockDim.x</code>，那么两种方法是完全等价的：</p>
+</li>
+</ol>
+<ul>
+<li>时间步200，每个i都会执行65536个线程吗？</li>
+</ul>
+<ol>
+<li>循环执行 200 次（<code>i</code> 从 0 到 199）</li>
+<li>每次循环中：<ul>
+<li>第一次核函数调用启动 65,536 个线程（更新电场）</li>
+<li>第二次核函数调用也启动 65,536 个线程（更新磁场）</li>
+<li><code>cudaThreadSynchronize()</code> 确保所有线程完成执行后再进入下一个时间步</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>kernal边界条件</li>
+</ul>
+<ol>
+<li><p>电场为零的条件：</p>
+<ul>
+<li>在理想导体的表面，电场的切向分量必须为零。这是因为任何非零的切向电场分量都会在导体中感应出电流，直到电场消失。</li>
+<li>在代码中，通过将电场 <code>g_ez[kn]</code> 设置为零，确保了在仿真区域的边界上满足PEC条件。</li>
+</ul>
+</li>
+<li><p>边界线程的处理：</p>
+<ul>
+<li>代码中条件 <code>((bx==0)&amp;&amp;(tx==0))||((bx==(gridDim.x-1))&amp;&amp;(tx==(blockDim.x-1)))||((by==0)&amp;&amp;(ty==0))||((by==(gridDim.y-1))&amp;&amp;(ty==(blockDim.y-1)))</code> 检查的是线程是否位于仿真区域的边界。</li>
+<li>如果线程位于边界位置，则将对应的电场值 <code>g_ez[kn]</code> 设置为零，模拟理想导体的反射特性。</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>cpuiteration边界条件</li>
+</ul>
+<ol>
+<li>电场Ez的更新</li>
+</ol>
+<ul>
+<li>循环范围是 <code>i=1</code> 到 <code>i=row-2</code>，<code>j=1</code> 到 <code>j=column-2</code></li>
+<li>这意味着边界上的电场值 <code>ez[0][j]</code>, <code>ez[row-1][j]</code>, <code>ez[i][0]</code>, <code>ez[i][column-1]</code> 不会被更新</li>
+<li>这些边界值保持为初始值0，相当于实现了一个固定边界条件（Dirichlet边界条件）</li>
+</ul>
+<ol start="2">
+<li>磁场Hx的更新</li>
+</ol>
+<ul>
+<li>循环范围是 <code>i=0</code> 到 <code>i=row-1</code>，<code>j=0</code> 到 <code>j=column-2</code></li>
+<li>所有行的Hx都被更新，但最后一列的Hx不更新</li>
+<li>这是因为Hx在x方向上与Ez交错排列，最后一列的Hx不需要计算</li>
+</ul>
+<ol start="3">
+<li>磁场Hy的更新</li>
+</ol>
+<ul>
+<li>循环范围是 <code>i=0</code> 到 <code>i=row-2</code>，<code>j=0</code> 到 <code>j=column-1</code></li>
+<li>所有列的Hy都被更新，但最后一行的Hy不更新</li>
+<li>这是因为Hy在y方向上与Ez交错排列，最后一行的Hy不需要计算</li>
+</ul>
+
                 
               </div>
             
@@ -290,7 +490,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div></div>
+      <div>Heterogeneous Parallel Computing</div>
       <div>http://example.com/2025/03/14/CUDA/</div>
     </div>
     <div class="license-meta">
